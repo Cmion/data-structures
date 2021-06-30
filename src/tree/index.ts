@@ -1,4 +1,4 @@
-import util from "util";
+import util from 'util';
 
 export class Node {
   value: any = null;
@@ -46,21 +46,21 @@ export class Node {
     return undefined;
   }
 
-  insertAdjacentNode(node: Node, position?: "before" | "after") {
+  insertAdjacentNode(node: Node, position?: 'before' | 'after') {
     if (this.parentNode) {
       if (position === undefined) {
         this.parentNode.insertChild(node);
       }
 
-      if (position === "before" || position === "after") {
+      if (position === 'before' || position === 'after') {
         const front = this.parentNode.children.slice(
           0,
-          this.index + (position === "after" ? 1 : 0)
+          this.index + (position === 'after' ? 1 : 0)
         );
         const back = [
           node,
           ...this.parentNode.children.slice(
-            this.index + (position === "after" ? 1 : 0)
+            this.index + (position === 'after' ? 1 : 0)
           ),
         ];
         back.forEach(
@@ -93,13 +93,13 @@ const log = (myObject: any, clear: boolean = true) => {
   console.log(util.inspect(myObject, false, null, true /* enable colors */));
 };
 const tree = new Node(45);
-const firstChild = new Node(5).insertChild(new Node("Yayy"));
+const firstChild = new Node(5).insertChild(new Node('Yayy'));
 tree.insertChild(firstChild);
-tree.insertChild(new Node('Hello Simeon'))
+tree.insertChild(new Node('Hello Simeon'));
 //   .insertChild(new Node("World"));
 
-firstChild.insertAdjacentNode(new Node("I'm Adjacent 1"), "after");
-firstChild.insertAdjacentNode(new Node("I'm Adjacent 2"), "before");
+firstChild.insertAdjacentNode(new Node("I'm Adjacent 1"), 'after');
+firstChild.insertAdjacentNode(new Node("I'm Adjacent 2"), 'before');
 // const secondChild = new Node(23)
 //   .insertChild(new Node(12).insertChild(new Node(399)))
 //   .insertChild(new Node(400));
