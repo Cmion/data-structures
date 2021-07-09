@@ -1,10 +1,17 @@
-import util from 'util';
+import { print } from '../utils';
+import { Traversal } from './traversal';
 
-export class Node {
+enum TreeType {
+  root = '@@ROOT',
+  node = '@@NODE',
+}
+
+export class Tree {
   value: any = null;
-  parentNode: null | Node = null;
-  children: Node[] = [];
+  parentNode: null | Tree = null;
+  children: Tree[] = [];
   index: number = 0;
+  type: TreeType = TreeType.root;
   constructor(value: any) {
     this.value = value;
   }
@@ -14,10 +21,26 @@ export class Node {
    * @param node
    * @returns
    */
-  insertChild(node: Node) {
+  insertChild(node: Tree) {
     node.index = this.children.length;
     this.children.push(node);
-    node.parent = this;
+    node.parentNode = this;
+    node.type = TreeType.node;
+    return this;
+  }
+
+  /**
+   * Inserts multiple nodes to the tree or sub-tree
+   * @param node
+   * @returns
+   */
+  insertChildren(...nodes: Tree[]) {
+    if (Array.isArray(nodes)) {
+      for (const node of nodes) {
+        this.insertChild(node);
+      }
+    }
+
     return this;
   }
 
@@ -25,7 +48,7 @@ export class Node {
    * Checks if the node is a leaf node
    * @returns
    */
-  isLeafNode() {
+  isLeaf() {
     return this.children.length <= 0;
   }
 
@@ -42,7 +65,7 @@ export class Node {
    * @returns
    */
   firstChild() {
-    return this.children[0];
+    return this.children[0] ?? null;
   }
 
   /**
@@ -50,7 +73,7 @@ export class Node {
    * @returns
    */
   lastChild() {
-    return this.children[this.children.length - 1];
+    return this.children[this.children.length - 1] ?? null;
   }
 
   /**
@@ -59,9 +82,9 @@ export class Node {
    */
   nextSibling() {
     if (this.parentNode) {
-      return this.parentNode.children[this.index + 1];
+      return this.parentNode.children[this.index + 1] ?? null;
     }
-    return undefined;
+    return null;
   }
 
   /**
@@ -70,9 +93,9 @@ export class Node {
    */
   previousSibling() {
     if (this.parentNode) {
-      return this.parentNode.children[this.index - 1];
+      return this.parentNode.children[this.index - 1] ?? null;
     }
-    return undefined;
+    return null;
   }
 
   /**
@@ -81,7 +104,7 @@ export class Node {
    * @param position Node position ('before' | 'after' | undefined)
    * @returns
    */
-  insertAdjacentNode(node: Node, position?: 'before' | 'after') {
+  insertAdjacentNode(node: Tree, position?: 'before' | 'after') {
     if (this.parentNode) {
       if (position === undefined) {
         this.parentNode.insertChild(node);
@@ -103,33 +126,141 @@ export class Node {
         );
         front.push(...back);
         this.parentNode.children = front;
+        node.parent = this.parentNode;
+        node.type = TreeType.node;
       }
     }
     return this;
   }
 
   /**
+   * Removes the last node of a tree and returns it
+   *
+   */
+  removeNext(): Tree {
+    const lastNode = this.lastChild();
+    this.children.length = this.children.length - 1;
+    return lastNode;
+  }
+
+  /**
+   * Removes the first node of a tree and returns the deleted node
+   */
+  removeFirst(): Tree {
+    const firstNode = this.firstChild();
+    this.children.shift();
+    return firstNode;
+  }
+
+  /**
    * Sets the parent of a node
    */
-  set parent(node: Node) {
+  set parent(node: Tree) {
     this.parentNode = node;
+  }
+
+  /**
+   * Sets the parent of a node
+   */
+  set updateValue(value: any) {
+    this.value = value;
+  }
+
+  findNode(
+    predicate: (
+      current: Tree,
+      index?: number,
+      queue?: this
+    ) => boolean | undefined
+  ): Tree | undefined {
+    let value: Tree | undefined = undefined;
+    for (let index = 0; index < this.children.length; index++) {
+      if (predicate(this.children[index], index, this)) {
+        value = this.children[index];
+        break;
+      }
+    }
+
+    return value;
+  }
+
+  /**
+   * Returns the distance of a node to the root of the tree
+   */
+  findDistanceToRoot() {
+    let distance = 0;
+    const findDistance = (node: Tree) => {
+      if (node.parentNode !== null) {
+        distance++;
+        findDistance(node.parentNode);
+      }
+    };
+
+    findDistance(this);
+    return distance;
+  }
+
+  /**
+   * Returns the path of a node to the root of the tree
+   */
+  getPathToRoot(): Tree[] {
+    const path: Tree[] = [];
+    const traverse = (node: Tree) => {
+      path.push(node);
+      if (node.parentNode !== null) {
+        traverse(node.parentNode);
+      }
+    };
+    traverse(this);
+
+    return path;
+  }
+
+  isAncestor(callback: (node: Tree) => boolean) {
+    let callbackResult = callback(this);
+
+    const traverse = (node: Tree, callback: (node: Tree) => boolean) => {
+      callbackResult = callback(node);
+      if (!callbackResult && node.parentNode !== null) {
+        traverse(node.parentNode, callback);
+      }
+    };
+
+    if (this.parentNode !== null) {
+      traverse(this, callback);
+      return callbackResult;
+    }
+
+    return false;
   }
 }
 
-const log = (myObject: any, clear: boolean = true) => {
-  if (clear) console.clear();
-  console.log(util.inspect(myObject, false, null, true /* enable colors */));
-};
+class Person {
+  hello = 'Yes';
+}
+const tree = new Tree('root');
+// const firstChild = new Tree('Original First Child').insertChild(
+//   new Tree(new Person())
+// );
+// tree.insertChild(firstChild);
+// tree.insertChild(new Tree('Other child')).insertChild(new Tree('World'));
 
-const tree = new Node(45);
-const firstChild = new Node(5).insertChild(new Node('Yayy'));
-tree.insertChild(firstChild);
-tree.insertChild(new Node('Hello Simeon')).insertChild(new Node('World'));
+// firstChild.insertAdjacentNode(new Tree('After'), 'after');
+// firstChild.insertAdjacentNode(new Tree('Before'), 'before');
+const E = new Tree('E');
+const C = new Tree('C').insertChild(E);
+const D = new Tree('D');
+const A = new Tree('A').insertChildren(C, D);
 
-firstChild.insertAdjacentNode(new Node("I'm Adjacent 1"), 'after');
-firstChild.insertAdjacentNode(new Node("I'm Adjacent 2"), 'before');
+tree.insertChildren(A, new Tree('B'));
 
-log(tree);
-// log(firstChild, false);
-// log(secondChild, false);
-console.log(firstChild.lastChild(), firstChild.index);
+// const traverse = new Traversal();
+
+// const traversalCB = (tree: Tree) => {
+//   if (tree.value instanceof Person) {
+//     console.log('Tree:  ', tree);
+//   }
+// };
+// traverse.postorder(tree, traversalCB);
+print(E.getPathToRoot().map((o) => o.value));
+print(E.isAncestor((node: Tree) => node.value === A.value));

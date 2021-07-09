@@ -10,7 +10,8 @@
   },
   "scripts": {
     "start": "ts-node src/main.ts",
-    "run:tree": "ts-node src/tree"
+    "run:tree": "ts-node src/tree",
+    "build": "tsc"
   },
   "devDependencies": {
     "@types/node": "^15.12.5",
